@@ -67,6 +67,34 @@ export class NovelistDB extends Dexie {
 
 export const db = new NovelistDB();
 
+/**
+ * Database health, used to explain a stuck start instead of showing a blank screen.
+ * "blocked" = another tab (often a frozen background tab on phones) still holds the old version open.
+ */
+export type DbHealth = 'opening' | 'ready' | 'blocked' | 'error';
+let health: DbHealth = 'opening';
+let healthError = '';
+const listeners = new Set<() => void>();
+const setHealth = (h: DbHealth, err = '') => {
+  health = h;
+  healthError = err;
+  listeners.forEach((l) => l());
+};
+export const getDbHealth = () => ({ health, error: healthError });
+export const onDbHealth = (l: () => void) => {
+  listeners.add(l);
+  return () => void listeners.delete(l);
+};
+db.on('blocked', () => setHealth('blocked'));
+db.on('ready', () => setHealth('ready'));
+// When a newer version of the app upgrades the database in another tab, step aside so it is not blocked.
+db.on('versionchange', () => {
+  db.close();
+  setTimeout(() => location.reload(), 300);
+  return false;
+});
+db.open().catch((e) => setHealth('error', String(e?.message ?? e)));
+
 /** Tables that hold project-scoped data (used for export, clone and delete). */
 export const PROJECT_TABLES = [
   'chapters',

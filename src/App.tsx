@@ -8,6 +8,7 @@ import { requestPersistentStorage } from '@/db/db';
 import { runAutoBackupIfDue } from '@/lib/backup';
 import { recoverEmergencyBuffer } from '@/lib/emergency';
 import { PwaPrompt } from '@/components/PwaPrompt';
+import { DbStatus } from '@/components/DbStatus';
 import Dashboard from '@/pages/Dashboard';
 import { initCloud } from '@/cloud/account';
 import { startSyncEngine } from '@/cloud/sync';
@@ -97,6 +98,7 @@ export function App() {
       <DialogHost />
       <ToastHost />
       <PwaPrompt />
+      <DbStatus />
     </HashRouter>
   );
 }
