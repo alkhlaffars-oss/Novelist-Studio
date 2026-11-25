@@ -94,6 +94,14 @@ end $$;
 revoke all on function public.admin_stats() from public, anon;
 grant execute on function public.admin_stats() to authenticated;
 
+-- ───────────── API access ─────────────
+-- New Supabase projects may not expose new tables automatically; grant exactly what the app needs.
+-- Row Level Security above still limits every user to their own rows.
+grant usage on schema public to anon, authenticated;
+grant select, insert, update on public.profiles to authenticated;
+grant select, insert, update, delete on public.records to authenticated;
+revoke all on public.admins from anon, authenticated;
+
 -- ───────────── Make yourself admin ─────────────
 -- After you create your own account in the app, run this line with YOUR username:
 --   insert into public.admins (user_id) select user_id from public.profiles where username = 'your-username' on conflict do nothing;
