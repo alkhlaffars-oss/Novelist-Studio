@@ -69,3 +69,14 @@ src/
 ## اختصارات / Shortcuts
 
 `Ctrl/⌘+S` save · `Ctrl+Shift+S` named checkpoint · `Ctrl+F` find & replace · `Ctrl+Shift+F` global search · `Ctrl+.` focus mode · `Ctrl+Alt+S` / `Ctrl+Alt+I` toggle panels · `Ctrl+Alt+N` new scene · `Ctrl+Alt+↑/↓` previous/next scene · `Ctrl+Enter` scene break · `Ctrl+Shift+D` dialogue · `Alt+1…9` project sections.
+
+## الحسابات والمزامنة / Accounts & sync (optional)
+
+Username + password accounts with end-to-end encrypted sync between devices, on [Supabase](https://supabase.com) (free tier).
+
+1. Create a Supabase project. In **SQL Editor**, run `supabase/setup.sql`.
+2. **Authentication → Sign In / Providers → Email**: turn **Confirm email** off (usernames are mapped to internal addresses; no email is sent).
+3. Provide `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (Project Settings → API) as build environment variables (e.g. in Cloudflare Pages → Settings → Variables), or in `src/cloud/config.ts`. The anon key is public by design; access is enforced by Row Level Security.
+4. Create your account in the app, then make yourself admin (see the last line of `setup.sql`). Admins see aggregate numbers only at `#/admin`.
+
+Every record is encrypted in the browser (AES-GCM) with a random data key; the server stores that key only wrapped with a key derived from the user's password (PBKDF2, 310k iterations). Neither the server nor its owner can read novels. Consequence: there is no password reset — a forgotten password makes the cloud copy unrecoverable (local copies are unaffected). Version history stays on each device.

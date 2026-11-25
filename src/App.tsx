@@ -9,6 +9,8 @@ import { runAutoBackupIfDue } from '@/lib/backup';
 import { recoverEmergencyBuffer } from '@/lib/emergency';
 import { PwaPrompt } from '@/components/PwaPrompt';
 import Dashboard from '@/pages/Dashboard';
+import { initCloud } from '@/cloud/account';
+import { startSyncEngine } from '@/cloud/sync';
 
 const Projects = lazy(() => import('@/pages/Projects'));
 const Settings = lazy(() => import('@/pages/Settings'));
@@ -25,6 +27,7 @@ const Search = lazy(() => import('@/pages/Search'));
 const Export = lazy(() => import('@/pages/Export'));
 const Assistant = lazy(() => import('@/pages/Assistant'));
 const ProjectDetails = lazy(() => import('@/pages/ProjectDetails'));
+const Admin = lazy(() => import('@/pages/Admin'));
 
 function useThemeAndLanguage() {
   const { theme, lang, accent, uiScale } = useSettings();
@@ -56,6 +59,8 @@ export function App() {
   useEffect(() => {
     requestPersistentStorage();
     recoverEmergencyBuffer().catch(console.error);
+    startSyncEngine();
+    initCloud().catch(console.error);
     const id = window.setTimeout(() => runAutoBackupIfDue().catch(console.error), 4000);
     return () => window.clearTimeout(id);
   }, []);
@@ -68,6 +73,7 @@ export function App() {
             <Route index element={<Dashboard />} />
             <Route path="projects" element={<Projects />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="admin" element={<Admin />} />
           </Route>
           <Route path="p/:pid" element={<ProjectLayout />}>
             <Route index element={<Navigate to="write" replace />} />

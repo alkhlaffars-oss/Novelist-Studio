@@ -37,6 +37,7 @@ export class NovelistDB extends Dexie {
   issues!: EntityTable<Issue, 'id'>;
   backups!: EntityTable<LocalBackup, 'id'>;
   kv!: EntityTable<KV, 'key'>;
+  syncState!: EntityTable<{ key: string; hash: string }, 'key'>;
 
   constructor() {
     super('novelist-studio');
@@ -59,6 +60,8 @@ export class NovelistDB extends Dexie {
       backups: 'id, createdAt',
       kv: 'key',
     });
+    // v2: cloud sync bookkeeping (hash of each record as last synced)
+    this.version(2).stores({ syncState: 'key' });
   }
 }
 

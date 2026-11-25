@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Settings as SettingsIcon, Globe, PenLine, Keyboard, Target, HardDrive, Sparkles, FileDown, Shield, Download, Upload, RotateCcw, Trash2, Check, Loader2, KeyRound } from 'lucide-react';
+import { Settings as SettingsIcon, Cloud, Globe, PenLine, Keyboard, Target, HardDrive, Sparkles, FileDown, Shield, Download, Upload, RotateCcw, Trash2, Check, Loader2, KeyRound } from 'lucide-react';
 import { db, requestPersistentStorage } from '@/db/db';
 import { FONT_STACKS, EXPORT_FONTS, useSettings, useT, type EditorFont, type AIProvider } from '@/store/settings';
 import { Field, confirmDialog, downloadBlob, promptDialog, toast, useFmt, cx } from '@/components/ui';
 import { Range } from '@/editor/Toolbar';
+import { CloudAccount } from '@/components/CloudAccount';
 import { buildLibraryBackup, readJsonFile, restoreFromFile, runAutoBackupIfDue } from '@/lib/backup';
 import { ANTHROPIC_MODELS, testConnection, AIError } from '@/ai/client';
 import { forgetKey, getApiKey, hasVault, maskKey, saveEncryptedKey, setSessionKey, useKeyState } from '@/ai/keys';
 
-const SECTIONS = ['general', 'editor', 'shortcuts', 'goals', 'backup', 'ai', 'export', 'privacy'] as const;
+const SECTIONS = ['account', 'general', 'editor', 'shortcuts', 'goals', 'backup', 'ai', 'export', 'privacy'] as const;
 
 export default function Settings() {
   const t = useT();
@@ -19,8 +20,9 @@ export default function Settings() {
     const id = loc.hash.split('#')[2] ?? loc.hash.replace('#', '');
     if (id) setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 100);
   }, [loc.hash]);
-  const icons = { general: <Globe size={15} />, editor: <PenLine size={15} />, shortcuts: <Keyboard size={15} />, goals: <Target size={15} />, backup: <HardDrive size={15} />, ai: <Sparkles size={15} />, export: <FileDown size={15} />, privacy: <Shield size={15} /> };
+  const icons = { account: <Cloud size={15} />, general: <Globe size={15} />, editor: <PenLine size={15} />, shortcuts: <Keyboard size={15} />, goals: <Target size={15} />, backup: <HardDrive size={15} />, ai: <Sparkles size={15} />, export: <FileDown size={15} />, privacy: <Shield size={15} /> };
   const names = {
+    account: t('الحساب والمزامنة', 'Account & sync'),
     general: t('عام والمظهر', 'General & appearance'),
     editor: t('المحرر', 'Editor'),
     shortcuts: t('اختصارات لوحة المفاتيح', 'Keyboard shortcuts'),
@@ -45,6 +47,9 @@ export default function Settings() {
           ))}
         </nav>
         <div className="space-y-6 min-w-0">
+          <Section id="account" title={names.account} desc={t('أنشئ حساباً باسم مستخدم وكلمة مرور لمزامنة رواياتك بين الجوال والكمبيوتر. التطبيق يعمل كاملاً بدون حساب أيضاً.', 'Create an account to sync your novels between phone and computer. The app also works fully without one.')}>
+            <CloudAccount />
+          </Section>
           <General title={names.general} />
           <EditorSettings title={names.editor} />
           <Shortcuts title={names.shortcuts} />
