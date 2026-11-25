@@ -499,10 +499,10 @@ async function addSnapshot(scene: Scene, content: string, label: string, kind: S
 }
 
 /** Creates a named checkpoint of the current text. */
-export async function createCheckpoint(sceneId: ID, label: string) {
+export async function createCheckpoint(sceneId: ID, label: string, kind: Snapshot['kind'] = 'manual') {
   const s = await db.scenes.get(sceneId);
   if (!s) return;
-  await addSnapshot(s, await getSceneHtml(sceneId), label, 'manual');
+  await addSnapshot(s, await getSceneHtml(sceneId), label, kind);
 }
 
 /** Restores an old version. The current text is saved first, so restoring never loses anything. */

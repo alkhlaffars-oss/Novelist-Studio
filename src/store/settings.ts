@@ -10,7 +10,7 @@ export type AIProvider = 'anthropic' | 'openai' | 'compatible';
 export interface ExportSettings {
   pageSize: 'A4' | 'A5' | 'Letter' | '6x9';
   marginMm: number;
-  font: EditorFont;
+  font: string; // font family name written into the document
   fontSize: number;
   lineSpacing: number;
   pageNumbers: boolean;
@@ -38,7 +38,7 @@ export interface Settings {
   showInspector: boolean;
   goals: { daily: number; weekly: number; monthly: number };
   backup: { auto: boolean; keep: number; remindDays: number; lastDownloadAt?: number };
-  ai: { provider: AIProvider; model: string; baseUrl: string; keyMode: 'session' | 'encrypted'; maxContextChars: number; temperature: number };
+  ai: { provider: AIProvider; model: string; baseUrl: string; keyMode: 'session' | 'encrypted'; maxContextChars: number; effort: 'low' | 'medium' | 'high'; temperature: number };
   exportDefaults: ExportSettings;
   privacy: { aiEnabled: boolean };
   set: (patch: Partial<Omit<Settings, 'set'>>) => void;
@@ -47,7 +47,7 @@ export interface Settings {
 export const DEFAULT_EXPORT: ExportSettings = {
   pageSize: 'A5',
   marginMm: 20,
-  font: 'amiri',
+  font: 'Amiri',
   fontSize: 13,
   lineSpacing: 1.6,
   pageNumbers: true,
@@ -77,12 +77,21 @@ export const useSettings = create<Settings>()(
       showInspector: false,
       goals: { daily: 1000, weekly: 6000, monthly: 25000 },
       backup: { auto: true, keep: 10, remindDays: 7 },
-      ai: { provider: 'anthropic', model: 'claude-sonnet-5-5', baseUrl: '', keyMode: 'session', maxContextChars: 120000, temperature: 0.7 },
+      ai: { provider: 'anthropic', model: 'claude-opus-5-5', baseUrl: '', keyMode: 'session', maxContextChars: 400000, effort: 'medium', temperature: 0.7 },
       exportDefaults: DEFAULT_EXPORT,
       privacy: { aiEnabled: true },
       set: (patch) => set(patch),
     }),
-    { name: 'ns-settings', version: 1 },
+    {
+      name: 'ns-settings',
+      version: 2,
+      migrate: (state, version) => {
+        const s = state as Settings;
+        if (version < 2 && s.exportDefaults) s.exportDefaults = { ...DEFAULT_EXPORT, ...s.exportDefaults, font: 'Amiri' };
+        if (s.ai && !s.ai.effort) s.ai = { ...s.ai, effort: 'medium' };
+        return s;
+      },
+    },
   ),
 );
 
@@ -103,3 +112,15 @@ export function useT() {
 
 export const getLang = () => useSettings.getState().lang;
 export const tr = (ar: string, en: string) => (getLang() === 'ar' ? ar : en);
+
+/** Fonts offered for exported documents. Web fonts are bundled for PDF; for DOCX the font must exist on the reader's computer. */
+export const EXPORT_FONTS: { name: string; css: string; bundled: boolean }[] = [
+  { name: 'Amiri', css: "Amiri, 'Noto Naskh Arabic', serif", bundled: true },
+  { name: 'Noto Naskh Arabic', css: "'Noto Naskh Arabic', Amiri, serif", bundled: true },
+  { name: 'IBM Plex Sans Arabic', css: "'IBM Plex Sans Arabic', sans-serif", bundled: true },
+  { name: 'Noto Sans Arabic', css: "'Noto Sans Arabic', sans-serif", bundled: true },
+  { name: 'Traditional Arabic', css: "'Traditional Arabic', Amiri, serif", bundled: false },
+  { name: 'Sakkal Majalla', css: "'Sakkal Majalla', Amiri, serif", bundled: false },
+  { name: 'Arial', css: 'Arial, sans-serif', bundled: false },
+  { name: 'Times New Roman', css: "'Times New Roman', serif", bundled: false },
+];
