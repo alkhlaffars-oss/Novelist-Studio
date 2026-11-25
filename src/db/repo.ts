@@ -109,7 +109,7 @@ export async function exportProjectBundle(projectId: ID, opts: { includeHistory?
 const ID_FIELDS = new Set([
   'chapterId', 'sceneId', 'locationId', 'povId', 'sectionId', 'fromId', 'toId', 'threadId', 'payoffId', 'lastSceneId',
 ]);
-const ID_ARRAY_FIELDS = new Set(['characterIds', 'chapterIds', 'sceneIds', 'entityIds', 'afterIds']);
+const ID_ARRAY_FIELDS = new Set(['characterIds', 'chapterIds', 'sceneIds', 'entityIds', 'afterIds', 'links']);
 const ENTITY_REF_FIELDS = new Set(['firstScene', 'lastScene', 'deathScene']);
 
 /**
@@ -526,6 +526,8 @@ export async function createEntity(projectId: ID, type: EntityType, name: string
 }
 export const updateEntity = (id: ID, patch: Partial<Entity>) => db.entities.update(id, { ...patch, updatedAt: now() });
 export async function deleteEntity(id: ID) {
+  const ent = await db.entities.get(id);
+  if (!ent) return;
   await db.transaction('rw', [db.entities, db.relationships, db.scenes, db.events, db.plotCards, db.plotThreads], async () => {
     await db.entities.delete(id);
     await db.relationships.where('fromId').equals(id).delete();
@@ -533,17 +535,20 @@ export async function deleteEntity(id: ID) {
     const strip = <T extends { characterIds: ID[] }>(r: T) => {
       r.characterIds = r.characterIds.filter((x) => x !== id);
     };
-    await db.scenes.toCollection().modify((s) => {
+    await db.scenes.where('projectId').equals(ent.projectId).modify((s) => {
       strip(s);
       if (s.locationId === id) s.locationId = undefined;
       if (s.povId === id) s.povId = undefined;
     });
-    await db.events.toCollection().modify((e) => {
+    await db.events.where('projectId').equals(ent.projectId).modify((e) => {
       strip(e);
       if (e.locationId === id) e.locationId = undefined;
     });
-    await db.plotCards.toCollection().modify(strip);
-    await db.plotThreads.toCollection().modify(strip);
+    await db.plotCards.where('projectId').equals(ent.projectId).modify(strip);
+    await db.plotThreads.where('projectId').equals(ent.projectId).modify(strip);
+    await db.entities.where('projectId').equals(ent.projectId).modify((e) => {
+      if (e.links?.includes(id)) e.links = e.links.filter((x) => x !== id);
+    });
   });
 }
 
@@ -590,9 +595,11 @@ export async function createEvent(projectId: ID, init: Partial<TimelineEvent>) {
 }
 export const updateEvent = (id: ID, patch: Partial<TimelineEvent>) => db.events.update(id, { ...patch, updatedAt: now() });
 export async function deleteEvent(id: ID) {
+  const ev = await db.events.get(id);
+  if (!ev) return;
   await db.transaction('rw', db.events, async () => {
     await db.events.delete(id);
-    await db.events.toCollection().modify((e) => {
+    await db.events.where('projectId').equals(ev.projectId).modify((e) => {
       e.afterIds = e.afterIds.filter((x) => x !== id);
     });
   });
@@ -629,7 +636,7 @@ export async function createThread(projectId: ID, name: string, color: string) {
 export async function deleteThread(id: ID) {
   await db.transaction('rw', db.plotThreads, db.plotCards, async () => {
     await db.plotThreads.delete(id);
-    await db.plotCards.where('projectId').notEqual('').modify((c) => {
+    await db.plotCards.toCollection().modify((c) => {
       if (c.threadId === id) c.threadId = undefined;
     });
   });

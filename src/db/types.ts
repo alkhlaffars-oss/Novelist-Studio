@@ -79,6 +79,8 @@ export interface Entity {
   name: string;
   fields: Record<string, string>;
   image?: string;
+  gallery?: string[]; // additional reference images
+  links?: ID[]; // related entities (e.g. characters tied to a location)
   tags: string[];
   // character map layout
   mapX?: number;
@@ -237,6 +239,7 @@ export interface Issue {
   chapterIds: ID[];
   entityIds: ID[];
   status: 'open' | 'resolved' | 'ignored';
+  severity?: 'high' | 'medium' | 'low';
   source: 'auto' | 'manual' | 'ai';
   createdAt: number;
   updatedAt: number;
