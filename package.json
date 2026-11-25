@@ -18,7 +18,7 @@
     "@fontsource/ibm-plex-sans-arabic": "^5.1.0",
     "@fontsource/noto-naskh-arabic": "^5.1.0",
     "@fontsource/noto-sans-arabic": "^5.1.0",
-    "@supabase/supabase-js": "^2.48.1",
+    "@supabase/supabase-js": "^2.119.2",
     "@tiptap/extension-highlight": "^2.11.5",
     "@tiptap/extension-placeholder": "^2.11.5",
     "@tiptap/extension-text-align": "^2.11.5",
