@@ -51,13 +51,25 @@ export default function Write() {
   const scrollerRef = useRef<HTMLDivElement>(null);
 
   // Resolve the scene to open: route → last opened → first scene.
+  // The route is trusted even before the live scene list catches up (e.g. right after creating a scene);
+  // only an id that is confirmed missing in the database falls back.
   const allScenes = useMemo(() => ms?.flatMap((c) => c.scenes) ?? [], [ms]);
-  const sceneId = routeSceneId && allScenes.some((s) => s.id === routeSceneId) ? routeSceneId : undefined;
+  const sceneId = routeSceneId;
   useEffect(() => {
-    if (!ms || sceneId) return;
-    const fallback = allScenes.find((s) => s.id === project.lastSceneId) ?? allScenes[0];
-    if (fallback) navigate(`/p/${project.id}/write/${fallback.id}${window.location.hash.includes('?') ? '?' + window.location.hash.split('?')[1] : ''}`, { replace: true });
-  }, [ms, sceneId, allScenes, project.lastSceneId, project.id, navigate]);
+    if (!ms) return;
+    let alive = true;
+    (async () => {
+      if (routeSceneId) {
+        const exists = await db.scenes.get(routeSceneId);
+        if (exists?.projectId === project.id || !alive) return;
+      }
+      const fallback = allScenes.find((s) => s.id === project.lastSceneId) ?? allScenes[0];
+      if (alive && fallback && fallback.id !== routeSceneId) navigate(`/p/${project.id}/write/${fallback.id}`, { replace: true });
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [ms, routeSceneId, allScenes, project.lastSceneId, project.id, navigate]);
 
   useEffect(() => {
     if (sceneId) touchProject(project.id, sceneId);
@@ -293,7 +305,7 @@ export default function Write() {
             </div>
           </div>
           {/* Scene navigation */}
-          <div className="mx-auto px-5 sm:px-10 -mt-[30vh] pb-16 flex items-center justify-between gap-3" style={{ maxWidth: settings.editorWidth + 80 }}>
+          <div className="mx-auto px-5 sm:px-10 pb-[40vh] flex items-center justify-between gap-3 border-t border-line/40 pt-4" style={{ maxWidth: settings.editorWidth + 80 }}>
             {prev ? (
               <button className="btn-ghost text-xs" onClick={() => open(prev.id)}>
                 <Prev size={14} /> {t('المشهد السابق', 'Previous scene')}

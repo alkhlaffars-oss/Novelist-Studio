@@ -154,7 +154,7 @@ body {
   caret-color: rgb(var(--accent));
   outline: none;
   min-height: 60vh;
-  padding-bottom: 40vh;
+  padding-bottom: 4rem;
   word-wrap: break-word;
   font-feature-settings: 'kern', 'liga', 'calt';
 }

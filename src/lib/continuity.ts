@@ -105,10 +105,21 @@ export async function runContinuityChecks(projectId: string): Promise<Finding[]>
     const hairColors = e.fields.hair ? colorsIn(e.fields.hair) : null;
     const age = e.fields.age ? Number(toLatinDigits(e.fields.age)) : NaN;
     if (!eyeColors?.size && !hairColors?.size && !Number.isFinite(age)) continue;
+    const otherNames = entities.filter((x) => x.type === 'character' && x.id !== e.id).flatMap(entityNames);
+    const mentionsAny = (sent: string, list: string[]) => list.some((n) => findAll(sent, n, { wholeWord: true }).length > 0);
     for (const m of mentions) {
       const s = pos.get(m.sceneId)!;
-      for (const sent of sentences(s.text)) {
-        if (!names.some((n) => findAll(sent, n, { wholeWord: true }).length)) continue;
+      const all = sentences(s.text);
+      // A sentence naming the character, plus the following sentence when it refers back by pronoun
+      // (i.e. it does not name another character) — common in Arabic prose.
+      const relevant = new Set<string>();
+      all.forEach((sent, i) => {
+        if (!mentionsAny(sent, names)) return;
+        relevant.add(sent);
+        const next = all[i + 1];
+        if (next && !mentionsAny(next, otherNames) && !mentionsAny(next, names)) relevant.add(next);
+      });
+      for (const sent of relevant) {
         const tks = tokens(sent);
         const sentColors = colorsIn(sent);
         const check = (field: 'eyes' | 'hair', expected: Set<string> | null, re: RegExp, what: [string, string]) => {
